@@ -14,7 +14,7 @@ module Rigrate
       db = ::SQLite3::Database.new(*default_opts.values)
     end
 
-    def select(sql, *args = [])
+    def select(sql, args = [])
       target_tbl_name = extract_tbl_from_sql(sql)
 
       ResultSet.new.tap do |rs|

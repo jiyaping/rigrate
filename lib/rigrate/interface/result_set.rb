@@ -4,14 +4,14 @@ module Rigrate
   # defination for column include name and type
   Column = Struct.new(:name, :type)
 
-  class Row
-    module RowStatus
-      NEW     =  :NEW
-      UPDATED =  :UPDATED
-      DELETE  =  :DELETE
-      ORIGIN  =  :ORIGIN
-    end
+  module RowStatus
+    NEW     =  :NEW
+    UPDATED =  :UPDATED
+    DELETE  =  :DELETE
+    ORIGIN  =  :ORIGIN
+  end
 
+  class Row
     attr_accessor :data
     attr_accessor :status
 
@@ -19,6 +19,20 @@ module Rigrate
       self.data = data
       self.status = status
     end
+
+    def +(t_row)
+      data = self.data + t_row.data
+      status = RowStatus::UPDATED
+    end
+
+    def ==(t_row)
+      data == t_row.data && status == t_row.status
+    end
+
+    def length
+      data.length
+    end
+    alias :size :length
   end
 
   class ResultSet
@@ -125,12 +139,51 @@ module Rigrate
       begin
         # begin transation
         # handler delete
+        handle_delete!
         # handler insert
+        handle_insert!
         # handler update
+        handle_update!
         # end transation
       rescue Exception => e
         raise e
         # rollback
+      end
+    end
+
+    def handle_insert!
+      sql = get_sql(:insert)
+
+      op_rows = row.select do |row|
+        row.status == RowStatus::NEW
+      end
+
+      op_rows.each do |row|
+        db.insert sql, row.data
+      end
+    end
+
+    def handle_update!
+      sql = get_sql(:update)
+
+      op_rows = rows.select do |row|
+        row.status == RowStatus::UPDATED
+      end
+
+      op_rows.each do |row|
+        db.update sql, row.data
+      end
+    end
+
+    def handle_delete!
+      sql = get_sql(:delete)
+
+      op_rows = rows.select do |row|
+        row.status == RowStatus::DELETE
+      end
+
+      op_rows.each do |row|
+        db.delete sql, row.data
       end
     end
 
