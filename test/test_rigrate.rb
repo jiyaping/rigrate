@@ -1,8 +1,6 @@
-gem "minitest"
-require 'minitest/autorun'
-require 'rigrate'
+require File.expand_path('../test_helper', __FILE__)
 
-class RigrateTest < Minitest::Test
+class RigrateTest < TestHelper
   def test_english_hello
   end
 end

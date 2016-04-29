@@ -1,10 +1,6 @@
-# encoding : utf-8
+require File.expand_path('../test_helper', __FILE__)
 
-gem 'minitest'
-require 'minitest/autorun'
-require 'rigrate'
-
-class RowTest < Minitest::Test
+class RowTest < TestHelper
   include Rigrate
 
   def setup
