@@ -1,64 +1,37 @@
 # encoding : utf-8
 
 module Rigrate
-  # defination for column include name and type
-  Column = Struct.new(:name, :type)
-
-  module RowStatus
-    NEW     =  :NEW
-    UPDATED =  :UPDATED
-    DELETE  =  :DELETE
-    ORIGIN  =  :ORIGIN
-  end
-
-  class Row
-    attr_accessor :data
-    attr_accessor :status
-
-    def initialize(data, status = RowStatus::ORIGIN)
-      self.data = data
-      self.status = status
-    end
-
-    def +(t_row)
-      data = self.data + t_row.data
-      status = RowStatus::UPDATED
-    end
-
-    def ==(t_row)
-      data == t_row.data && status == t_row.status
-    end
-
-    def length
-      data.length
-    end
-    alias :size :length
-  end
-
   class ResultSet
-    attr_reader   :db, :target_tbl_name
+    attr_accessor :db, :target_tbl_name
     attr_accessor :rows
     attr_accessor :column_info
 
-    # join two table by given field {}
-    def join(target, key_fields = {})
-      from_idx = column_idx(*key_fields.keys)
-      to_idx = column_idx(*key_fields.values)
+    # join two table by given field { :jc => :job_code }
+    def join(source_rs, key_fields = {})
+      # TODO when key_fields is empty
+      
+      origin_rs_idx = column_idx(*key_fields.keys)
+      source_rs_idx = source_rs.column_idx(*key_fields.values)
 
       ResultSet.new.tap do |rs|
-        rs.column_info = column_info + target.column_info
-        from_key_values = column_values(from_idx)
+        rs.column_info = column_info + source_rs.column_info
+
+        # TODO remove addtion header
+        # 
 
         rows.data.inject([]) do |new_rows, row|
+          origin_rs_key_values = row.values(origin_rs_idx)
 
-          selected_target_row = target.rows.data.select do |row|
-            true if column_values(to_idx) == from_key_values
-          end 
+          selected_source_rs_row = source_rs.rows.select do |row|
+            row.values(source_rs_idx) == origin_rs_key_values
+          end
 
-          if selected_target_row.size == 0
-            new_rows = selected_target_row.map { |t_row| row + t_row }
+          # TODO remove addtion data columns
+
+          if selected_source_rs_row.size == 0
+            new_rows <<selected_source_rs_row.map { |t_row| row + t_row }
           else
-            new_rows = row + Array.new(target.column_info.size)
+            new_rows << row + Array.new(source_rs.column_info.size)
           end
         end
       end
@@ -210,7 +183,7 @@ module Rigrate
     end
 
     def format_rows(src_rows, tg_width, filled = nil)
-      r_length = src_rows.first.data.size
+      r_length = src_rows.first.size
 
       if r_length > tg_width
         src_rows.map do |row|
@@ -229,8 +202,7 @@ module Rigrate
 
     def column_values(row, cols)
       cols.map do |col|
-        new_row = []
-        new_row << row[col]
+        row[col]
       end
     end
 
@@ -247,7 +219,7 @@ module Rigrate
     def fill_with_nil(rows, num)
       fill_row = Array.new(num)
       
-      resultset.map do |row|
+      rows.map do |row|
         row + fill_row  
       end
     end

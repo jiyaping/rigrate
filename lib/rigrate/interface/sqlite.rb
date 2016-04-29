@@ -23,8 +23,9 @@ module Rigrate
         rs.db = @db
         rs.target_tbl_name = target_tbl_name
         rs.column_info = statement_fields(stm.columns, stm.types)
-        stm.execute do |row|
-          rs.rows << Row.new(row)
+        rs.rows = []
+        stm.execute.each do |row|
+          rs.rows << Row.new(row.to_a)
         end
       end
     end

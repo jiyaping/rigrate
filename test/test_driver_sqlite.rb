@@ -24,7 +24,7 @@ class SqliteTest < TestHelper
 SQL
 
     # setup data
-    @db.execute(setup_sql)
+    @db.execute_batch(setup_sql)
   end
 
   def test_new_db
@@ -69,7 +69,12 @@ SQL
     assert_equal "users", @db.extract_tbl_from_sql(sql)
   end
 
+  def test_select_is_success
+    sql = "select id, name from users"
+    assert @db.select sql
+  end
+
   def teardown
-    @db.close unless @db.closed?
+    #@db.close unless @db.closed?
   end
 end

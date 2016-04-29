@@ -1,6 +1,9 @@
 # encoding : utf-8
 
 module Rigrate
+  # defination for column include name and type
+  Column = Struct.new(:name, :type)
+  
   class Driver
     attr_accessor :db
 
