@@ -2,8 +2,9 @@
 
 module Rigrate
   # defination for column include name and type
+  # column name is a string
   Column = Struct.new(:name, :type)
-  
+
   class Driver
     attr_accessor :db
 

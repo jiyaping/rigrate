@@ -19,13 +19,21 @@ class RowTest < TestHelper
     assert_equal @r1.status, RowStatus::ORIGIN
   end
 
+  def test_add_item_to_row
+    @r1.data << 1
+    assert_equal @r1.size, @r1.data.size
+
+    @r1 << 1
+    assert_equal @r1.size, @r1.data.size
+  end
+
   def test_row_equal
     refute_equal @r1, @r2
   end
 
   def test_row_plus
     r3 = Row.new(@arr_1 + @arr_2, RowStatus::UPDATED)
-    assert (@r1 + @r2), r3
+    assert_equal (@r1 + @r2).data.size, r3.size
   end
 
   def test_row_array_method
@@ -38,5 +46,10 @@ class RowTest < TestHelper
 
   def test_get_values
     assert_equal [2, 3], @r1.values(1, 2)
+  end
+
+  def test_fill_with_nil
+    # TODO
+    assert_equal @r1.dup << nil, @r1.fill_with_nil(1)
   end
 end

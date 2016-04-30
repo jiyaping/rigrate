@@ -30,6 +30,12 @@ module Rigrate
       end
     end
 
+    def save(resultset)
+      resultset.db = self
+
+      resultset.save!
+    end
+
     def insert(sql, *args)
       @db.execute sql, *args
     end

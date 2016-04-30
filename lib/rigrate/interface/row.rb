@@ -13,7 +13,7 @@ module Rigrate
     attr_accessor :status
     attr_accessor :fields
 
-    def initialize(data, status = RowStatus::ORIGIN)
+    def initialize(data = [], status = RowStatus::ORIGIN)
       self.data = data
       self.status = status
 
@@ -26,9 +26,12 @@ module Rigrate
       end
     end
 
+    # why need in this way?
     def +(t_row)
-      @data += t_row.data
+      t_row.data.each { |item| @data << item }
       @status = RowStatus::UPDATED
+
+      self
     end
 
     def ==(t_row)
@@ -37,6 +40,8 @@ module Rigrate
 
     def fill_with_nil(num)
       @data + Array.new(num)
+
+      self
     end
   end
 end

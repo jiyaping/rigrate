@@ -66,27 +66,99 @@ SQL
     assert_equal [], @rs.send(:column_idx, :testtesttest)
   end
 
-  def test_join_two_resulset
-    assert @rs.join(@rs2)
+  def test_union_two_result
+    assert_equal 8, @rs.union(@rs2).rows.size
+  end
+
+  def test_union_two_result_2
+    rs1 = ResultSet.new.tap do |rs|
+      rs.column_info = [Column.new(:name1, :type1),
+                        Column.new(:name2, :type2)]
+      rs.rows = [Row.new([111, 112]), 
+                Row.new([121, 122])]
+    end
+
+    rs2 = ResultSet.new.tap do |rs|
+      rs.column_info = [Column.new(:name5, :type3),
+                        Column.new(:name6, :type4),
+                        Column.new(:name7, :type5)]
+      rs.rows = [Row.new([211, 212, 213]),
+                Row.new([221, 222, 223])]
+    end
+
+    assert_equal 4, rs1.union(rs2).rows.size
+  end
+
+  def test_union_two_result_3
+    rs1 = ResultSet.new.tap do |rs|
+      rs.column_info = [Column.new(:name1, :type1),
+                        Column.new(:name2, :type2)]
+      rs.rows = [Row.new([111, 112]), 
+                Row.new([121, 122])]
+    end
+
+    rs2 = ResultSet.new.tap do |rs|
+      rs.column_info = [Column.new(:name5, :type3),
+                        Column.new(:name6, :type4),
+                        Column.new(:name7, :type5)]
+      rs.rows = [Row.new([211, 212, 213]),
+                Row.new([221, 222, 223])]
+    end
+
+    assert_equal 4, rs2.union(rs1).rows.size
+
+    # all rows type are Rigrate::Row
+    row = rs2.rows.select { |r| ! Row === r }
+    assert_equal 0, row.size
+  end
+
+  def test_join_two_result_1
+    assert_raises(ResultSetError) do
+      @rs.join(@rs2)
+    end
+  end
+
+  def test_join_two_resulset_2
+    rs1 = ResultSet.new.tap do |rs|
+      rs.column_info = [Column.new('name1', :type1),
+                        Column.new('name2', :type2)]
+      rs.rows = [Row.new([1, 112]), 
+                Row.new([2, 122])]
+    end
+
+    rs2 = ResultSet.new.tap do |rs|
+      rs.column_info = [Column.new('name5', :type3),
+                        Column.new('name6', :type4),
+                        Column.new('name7', :type5)]
+      rs.rows = [Row.new([1, 212, 213]),
+                Row.new([2, 222, 223]),
+                Row.new([2, 332, 333])]
+    end
+
+    rs = rs1.join(rs2, :name1 => :name5)
+    # rows size is 3
+    assert_equal 3, rs.rows.size
+    # column size is 4
+    assert_equal 4, rs.column_info.size
+  end
+
+  def test_minus_1
+    rs1 = ResultSet.new.tap do |rs|
+      rs.column_info = [Column.new('name1', :type1),
+                        Column.new('name2', :type2)]
+      rs.rows = [Row.new([1, 112]), 
+                Row.new([2, 122])]
+    end
+
+    rs2 = ResultSet.new.tap do |rs|
+      rs.column_info = [Column.new('name5', :type3),
+                        Column.new('name6', :type4)]
+      rs.rows = [Row.new([1, 112])]
+    end
+
+    assert_equal 1, (rs1 - rs2).rows.size
   end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
