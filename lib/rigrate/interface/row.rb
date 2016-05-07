@@ -8,7 +8,7 @@ module Rigrate
     ORIGIN  =  :ORIGIN
   end
 
-  class Row < DelegateClass(Array)
+  class Row
     attr_accessor :data
     attr_accessor :status
     attr_accessor :fields
@@ -16,8 +16,6 @@ module Rigrate
     def initialize(data = [], status = RowStatus::ORIGIN)
       self.data = data
       self.status = status
-
-      super(data)
     end
 
     def values(*idxes)
@@ -35,11 +33,30 @@ module Rigrate
     end
 
     def ==(t_row)
-      @data == t_row.data && status == t_row.status
+      @data == t_row.data && @status == t_row.status
     end
 
     def fill_with_nil(num)
       @data + Array.new(num)
+
+      self
+    end
+
+    def [](idx)
+      @data[idx]
+    end
+
+    def []=(idx, val)
+      @data[idx] = val
+      @status = RowStatus::UPDATED
+    end
+
+    def size
+     @data.size
+    end
+
+    def <<(item)
+      @data << item
 
       self
     end

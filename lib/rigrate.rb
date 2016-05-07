@@ -7,5 +7,7 @@ require 'rigrate/migration'
 require 'rigrate/parser'
 
 module Rigrate
-
+  def self.run
+    
+  end
 end

@@ -8,7 +8,7 @@ class ResultSetTest < TestHelper
 
     @tbl_name = 'users'
 
-    @db =  SQLite.new(opts)
+    @db =  Sqlite.new(opts)
     setup_sql =<<SQL
     create table users (
       id integer primary key not null,
@@ -35,7 +35,7 @@ SQL
   end
 
   def test_rs_attribute_db
-    assert_instance_of SQLite3::Database, @rs.db
+    assert_instance_of Sqlite, @rs.db
   end
 
   def test_rs_attribute_target_tbl_name
@@ -158,13 +158,145 @@ SQL
 
     assert_equal 1, (rs1 - rs2).rows.size
   end
+
+  def test_get_sql
+    rs = @db.select('select id,name,age from users')
+
+
+    # get insert 
+    assert_equal "insert into users (id,name,age) values (?,?,?)", rs.get_sql(:insert)
+    # get update
+    assert_equal "update users set name=?,age=? where id=?", rs.get_sql(:update)
+    assert_equal "update users set id=?,name=? where age=?", rs.get_sql(:update, ['age'])
+    # get delete
+    assert_equal "delete from users where id=? and name=? and age=?", rs.get_sql(:delete)
+  end
+
+  def test_handle_delete
+    rs_old = @db.select("select * from users")
+    rs_old.rows.first.status = RowStatus::DELETE
+
+    # delete the first row
+    rs_old.handle_delete!
+    rs_new = @db.select("select * from users")
+    # result set size reduce 1
+    assert_equal rs_old.size, (rs_new.size + 1)
+  end
+
+  def test_handle_update
+    rs = @db.select("select * from users")
+    # update the first row name of rs
+    temp = 'xxxxxxxxxxx'
+    rs.rows.first[1] = temp
+    rs.handle_update!
+    new_rs = @db.select('select * from users')
+    assert_equal new_rs.rows.first[1], temp
+  end
+
+  def test_handle_update2
+    rs = @db.select('select name,age from users')
+    temp = 1000
+    rs.rows.first[1] = temp
+    rs.handle_update!(['name'])
+    new_rs = @db.select('select name,age from users')
+    assert_equal new_rs.rows.first[1], temp
+  end
+
+  def test_handle_insert
+    rs = @db.select('select * from users')
+    old_size = rs.size
+    n_row = Row.new.tap do |row|
+      row.data = [50, 'jiyaping', 25, '1990-08-02']
+      row.status = RowStatus::NEW
+    end
+    rs.rows << n_row
+    rs.handle_insert!
+
+    new_rs = @db.select('select * from users')
+
+    assert_equal new_rs.size, (old_size + 1)
+    assert_equal new_rs.rows.last[1], 'jiyaping'
+  end
+
+  def test_handle_save
+    rs = @db.select('select * from users')
+    rs.rows.first.status = RowStatus::DELETE
+    old_size = rs.size
+    n_row = Row.new.tap do |row|
+      row.data = [50, 'jiyaping', 25, '1990-08-02']
+      row.status = RowStatus::NEW
+    end
+    rs.rows << n_row
+    new_rs = @db.select('select * from users')
+    assert_equal new_rs.size, old_size
+  end
+
+  def test_handle_row
+    rs1 = @db.select('select * from users where id = 1')
+    rs2 = @db.select('select * from users where id in (1,2)')
+
+    rows = rs1.handle_rows(rs2.rows)
+    assert_equal 2, rows.size
+    new_rows = rows.select do |r|
+      r.status == RowStatus::NEW
+    end
+
+    upd_rows = rows.select do |r|
+      r.status == RowStatus::UPDATED
+    end
+
+    del_rows = rows.select do |r|
+      r.status == RowStatus::DELETE
+    end
+
+
+    assert_equal 2, new_rows.size
+    assert_equal 0, upd_rows.size
+    assert_equal 0, del_rows.size
+  end
+
+  def test_handle_row2
+    rs1 = @db.select('select id,name,age from users where id = 1')
+    rs2 = @db.select('select id idx,name,age from users where id =2')
+
+    rows = rs1.handle_rows(rs2.rows, [0], [0])
+    assert_equal 1, rows.size
+    new_rows = rows.select do |r|
+      r.status == RowStatus::NEW
+    end
+
+    upd_rows = rows.select do |r|
+      r.status == RowStatus::UPDATED
+    end
+
+    del_rows = rows.select do |r|
+      r.status == RowStatus::DELETE
+    end
+
+    orig_rows = rows.select do |r|
+      r.status == RowStatus::DELETE
+    end
+
+    assert_equal 1, new_rows.size
+    assert_equal 0, upd_rows.size
+    assert_equal 0, del_rows.size
+    assert_equal 0, orig_rows.size
+  end
+
+  def test_migrate_from
+    rs1 = @db.select('select id,name,age from users')
+    old_size = rs1.size
+    rs2 = @db.select('select id idx,name,age from users')
+
+    rs2.rows.first[1] = 'xxxxxxxx'
+    rs2.rows << Row.new.tap do |row|
+      row.status = RowStatus::NEW
+      row.data = [10, 'jiyaping', 25]
+    end
+
+    rs1.migrate_from(rs2)
+
+    new_rs = @db.select('select id,name,age from users')
+    assert_equal old_size, (new_rs.size - 1)
+  end
 end
-
-
-
-
-
-
-
-
-

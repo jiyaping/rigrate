@@ -3,29 +3,31 @@
 require 'sqlite3'
 
 module Rigrate
-  class SQLite < Driver
+  class Sqlite < Driver
     def initialize(opts = {})
       default_opts = {
         file: ":memory:"
       }
 
-      default_opts.merge! opts
+      default_opts.merge! params_filter(opts)
 
       @db = ::SQLite3::Database.new(*default_opts.values)
     end
 
-    def select(sql, args = [])
+    def select(sql, *args)
       target_tbl_name = extract_tbl_from_sql(sql)
 
       ResultSet.new.tap do |rs|
         stm = @db.prepare sql, *args
 
-        rs.db = @db
+        rs.db = self
         rs.target_tbl_name = target_tbl_name
         rs.column_info = statement_fields(stm.columns, stm.types)
         rs.rows = []
         stm.execute.each do |row|
-          rs.rows << Row.new(row.to_a)
+          new_row = Row.new(row.to_a)
+          yield new_row if block_given?
+          rs.rows << new_row
         end
       end
     end
@@ -34,6 +36,14 @@ module Rigrate
       resultset.db = self
 
       resultset.save!
+    end
+
+    def delete(sql, *args)
+      @db.execute sql, *args
+    end
+
+    def update(sql, *args)
+      @db.execute sql, *args
     end
 
     def insert(sql, *args)
@@ -55,6 +65,14 @@ module Rigrate
       end
 
       cols
+    end
+
+    def params_filter(args = {})
+      valid_key = ['file']
+
+      args.select do |k, v|
+        valid_key.include? k.to_s
+      end
     end
   end
 end

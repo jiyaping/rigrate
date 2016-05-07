@@ -52,8 +52,5 @@ module Rigrate
       module_eval("attr_accessor #{name.to_sym}; name = ds")
     end
     alias :ds :data_source
-
-    private
-
   end
 end

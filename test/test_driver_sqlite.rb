@@ -8,7 +8,7 @@ class SqliteTest < TestHelper
 
     @tbl_name = 'users'
 
-    @db =  SQLite.new(opts)
+    @db =  Sqlite.new(opts)
     setup_sql =<<SQL
     create table users (
       id integer primary key not null,
@@ -72,6 +72,10 @@ SQL
   def test_select_is_success
     sql = "select id, name from users"
     assert @db.select sql
+  end
+
+  def test_delete
+    assert @db.delete("delete from users where id=?", [1])
   end
 
   def teardown

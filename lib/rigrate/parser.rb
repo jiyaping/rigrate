@@ -200,6 +200,7 @@ module Rigrate
       v1
     end
 
+=begin
     # begin for test usage
     def self_eval(str)
       puts  "eval:#{str}"
@@ -217,6 +218,7 @@ module Rigrate
       puts "migrate : #{val1.inspect}  #{val2.inspect} #{condi.inspect}"
     end
     # end for test usage
+=end
 
     def parse_rs_exp(tks)
       token = tks.shift

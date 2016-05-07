@@ -105,17 +105,17 @@ module Rigrate
         src_cols_idx = column_idx(condition.keys)
         tg_cols_idx = column_idx(condition.values)
 
-        @rows += handler_row(src_rs.rows, src_cols_idx, tg_cols_idx)
+        @rows += handle_rows(src_rs.rows, src_cols_idx, tg_cols_idx)
       else
-        @rows += handler_row(src_rs.rows)
+        @rows += handle_rows(src_rs.rows)
       end
 
-      save!
+      save!(condition)
     end
 
     # condition {:name => :c_name, :age => :age}
     # insert or update or delete
-    def handler_row (src_rows_data, src_cols_idx = nil, tg_cols_idx = nil)
+    def handle_rows (src_rows_data, src_cols_idx = nil, tg_cols_idx = nil)
       new_rows_data = []
 
       # condition parameter is null , so delete all ROWS. and then copy the source rs
@@ -128,12 +128,12 @@ module Rigrate
 
         src_rows_data = format_rows(src_rows_data, width)
         # make all rows NEW
-        return src_rows_data.map { |row| row.status = RowStatus::NEW }
+        return src_rows_data.map { |row| row.status = RowStatus::NEW; row }
       end
 
       src_rows_data.each do |src_row|
         @rows.each do |row|
-          if src_row.values(src_cols_idx) == row.values(tg_cols_idx)
+          if src_row.values(*src_cols_idx) == row.values(*tg_cols_idx)
             # suppose column squence is the same
             if row.data == src_row.data
               new_rows_data << row
@@ -151,7 +151,7 @@ module Rigrate
       new_rows_data
     end
 
-    def save!
+    def save!(condition = nil)
       begin
         # begin transation
         # handler delete
@@ -159,7 +159,7 @@ module Rigrate
         # handler insert
         handle_insert!
         # handler update
-        handle_update!
+        handle_update!(condition)
         # end transation
       rescue Exception => e
         raise e
@@ -170,40 +170,49 @@ module Rigrate
     def handle_insert!
       sql = get_sql(:insert)
 
-      op_rows = row.select do |row|
+      op_rows = @rows.select do |row|
         row.status == RowStatus::NEW
       end
 
       op_rows.each do |row|
-        db.insert sql, row.data
+        @db.insert sql, row.data
       end
     end
 
-    def handle_update!
-      sql = get_sql(:update)
+    def handle_update!(condition = nil)
+      sql = get_sql(:update, condition)
+
+      key_fields = (condition || primary_key)
+      param_fields = column_info.reject do |col|
+        key_fields.include? col.name
+      end.map { |col| col.name }
 
       op_rows = rows.select do |row|
         row.status == RowStatus::UPDATED
       end
 
       op_rows.each do |row|
-        db.update sql, row.data
+        # get key value
+        key_values = row.values(*column_idx(*key_fields))
+        params_values = row.values(*column_idx(*param_fields))
+
+        @db.update sql, (params_values + key_values)
       end
     end
 
     def handle_delete!
       sql = get_sql(:delete)
 
-      op_rows = rows.select do |row|
+      op_rows = @rows.select do |row|
         row.status == RowStatus::DELETE
       end
 
       op_rows.each do |row|
-        db.delete sql, row.data
+        @db.delete sql, row.data
       end
     end
 
-    def get_sql(type)
+    def get_sql(type, condition = nil)
       case type
       when :insert
         params_str = column_info.map(&:name).join(',')
@@ -211,9 +220,18 @@ module Rigrate
 
         "insert into #{target_tbl_name} (#{params_str}) values (#{values_str})"
       when :update
-        setting_str, params_str = (column_info.map do |col|
+        condi_fields = (condition || primary_key)
+
+        params_str = condi_fields.map do |col|
+          "#{col}=?"
+        end.join(' and ')
+
+        upd_fields = column_info.reject do |col|
+          condi_fields.include? col.name
+        end
+        setting_str = upd_fields.map do |col|
           "#{col.name}=?"
-        end).join(' and ')
+        end.join(',')
 
         "update #{target_tbl_name} set #{setting_str} where #{params_str}"
       when :delete
@@ -258,12 +276,20 @@ module Rigrate
       end
     end
 
+    def primary_key
+      @primary_key ||= @db.primary_key(@target_tbl_name)
+    end
+
     def include?(p_row)
       @rows.each do |row|
         return true if row.data == p_row.data
       end
 
       false
+    end
+
+    def size
+      @rows.size
     end
 
     private

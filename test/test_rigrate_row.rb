@@ -50,6 +50,6 @@ class RowTest < TestHelper
 
   def test_fill_with_nil
     # TODO
-    assert_equal @r1.dup << nil, @r1.fill_with_nil(1)
+    assert_equal @r1 << nil, @r1.fill_with_nil(1)
   end
 end

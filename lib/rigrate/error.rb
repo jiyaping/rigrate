@@ -5,4 +5,5 @@ module Rigrate
 
   class InterfaceError < BasicError; end
   class ResultSetError < BasicError; end
+  class RowError < BasicError; end
 end
