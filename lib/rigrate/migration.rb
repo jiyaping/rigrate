@@ -36,20 +36,27 @@ module Rigrate
 
       condition = eval "{#{condition}}" unless condition.nil?
       if ResultSet === rs_source && ResultSet === rs_target
-        return rs_source.migrate(rs_target, condition)
+        return rs_source.migrate_from(rs_target, condition)
       else
         raise Exception.new('rs_target or rs_source is not a resultset.')
       end
     end
 
+    # TODO ...........
+    def minus
+    end
+
     def self_eval(rb_str)
-      module_eval(rb_str)
+      instance_eval(rb_str)
     end
 
     def data_source(name, conn_str)
+      name = name.to_s
       ds = DataSource.new(conn_str)
-
-      module_eval("attr_accessor #{name.to_sym}; name = ds")
+      variable_name = "@#{name}".to_sym unless name.start_with? "@"
+      instance_variable_set variable_name, ds
+      instance_eval("def #{name}=(x); #{variable_name}=x; end;\
+        def #{name}; #{variable_name}; end")
     end
     alias :ds :data_source
   end

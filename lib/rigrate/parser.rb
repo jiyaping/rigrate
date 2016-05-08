@@ -200,26 +200,6 @@ module Rigrate
       v1
     end
 
-=begin
-    # begin for test usage
-    def self_eval(str)
-      puts  "eval:#{str}"
-    end
-
-    def join(val1, val2, condi = nil)
-      puts "join: #{val1.inspect}  #{val2.inspect} #{condi.inspect}"
-    end
-
-    def union(val1, val2)
-      puts "union: #{val1.inspect}  #{val2.inspect}"
-    end
-
-    def migrate(val1, val2, condi = nil)
-      puts "migrate : #{val1.inspect}  #{val2.inspect} #{condi.inspect}"
-    end
-    # end for test usage
-=end
-
     def parse_rs_exp(tks)
       token = tks.shift
       return if token.nil?
