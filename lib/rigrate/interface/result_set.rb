@@ -45,12 +45,13 @@ module Rigrate
 
             Row.new data, RowStatus::NEW
           end
-
           # this is a left join.
           if selected_source_rs_row.size > 0
-            new_rows += selected_source_rs_row.map { |t_row| row + t_row }
+            selected_source_rs_row.each do |t_row|
+              new_rows << Row.new(row.data + t_row.data, RowStatus::NEW)
+            end
           else
-            new_rows << row.fill_with_nil(addtion_column_info.size)
+            new_rows << row.dup.fill_with_nil(addtion_column_info.size)
           end
 
           new_rows
@@ -88,8 +89,8 @@ module Rigrate
       if src_col_size != target_col_size
         raise ResultSetError.new('minus must be used between column size equaled.')
       end
-      @rows.select! do |row|
-        ! target.include? row
+      @rows.reject! do |row|
+        target.include? row
       end
 
       self

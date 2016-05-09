@@ -25,6 +25,7 @@ module Rigrate
     end
 
     # why need in this way?
+    # TODO need rework
     def +(t_row)
       t_row.data.each { |item| @data << item }
       @status = RowStatus::UPDATED
@@ -37,7 +38,7 @@ module Rigrate
     end
 
     def fill_with_nil(num)
-      @data + Array.new(num)
+      @data += Array.new(num)
 
       self
     end

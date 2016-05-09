@@ -31,7 +31,7 @@ module Rigrate
 
     def lex(str)
       status = LexStatus::INIT
-      tokens = []
+      @tokens = []
       t_token = ''
       t_sub_token = ''
       string_type = StringType::DOUBLE_QUOTE
@@ -41,13 +41,13 @@ module Rigrate
 
         if c == nil
           token = Token.new TokenType::RUBY_STR, t_token
-          tokens << token
+          @tokens << token
           break
         end
 
         if status == LexStatus::IN_KEYWORD && c =~ /\s/
           if is_a_token?(t_token)
-            tokens << (Token.new get_token_type(t_token), t_token)
+            @tokens << (Token.new get_token_type(t_token), t_token)
             t_token = ''
             t_sub_token = ''
             status = LexStatus::INIT
@@ -94,9 +94,9 @@ module Rigrate
         if status == LexStatus::IN_RUBY_CODE && c =~ /\s/
           if is_a_token? t_sub_token
             token = Token.new TokenType::RUBY_STR, t_token.sub(/#{t_sub_token}$/, '')
-            tokens << token
+            @tokens << token
             token = Token.new get_token_type(t_sub_token), t_sub_token
-            tokens << token
+            @tokens << token
 
             status = LexStatus::INIT
             t_token = ''
@@ -112,7 +112,7 @@ module Rigrate
 
       # handler 
 
-      tokens
+      @tokens
     end
 
     def parsing

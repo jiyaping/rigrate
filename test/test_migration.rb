@@ -5,10 +5,10 @@ class MigrationTest < TestHelper
     @obj = Object.new.extend(Migration)
 
     # seed data
-    @obj.self_eval("ds :oa, 'sqlite://'")
+    @obj.self_eval("ds :oa, 'sqlite://memory'")
     @obj.oa.dbh.execute_batch(get_seed_sql('oa'))
 
-    @obj.self_eval("ds :hr, 'sqlite://'")
+    @obj.self_eval("ds :hr, 'sqlite://memory'")
     @obj.hr.dbh.execute_batch(get_seed_sql('hr'))    
   end
 
@@ -21,7 +21,7 @@ class MigrationTest < TestHelper
   end
 
   def test_data_source
-    @obj.ds('oa1', 'sqlite://')
+    @obj.ds('oa1', 'sqlite://memory')
 
     assert_kind_of DataSource, @obj.oa1
     assert @obj.oa1 = 'test'

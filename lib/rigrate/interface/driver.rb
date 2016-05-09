@@ -16,6 +16,18 @@ module Rigrate
       @db.send(mth, *args, &block)
     end
 
+    def extract_conn_param(uri)
+      opts = {}
+      opts['db_type'] = uri.scheme if uri.scheme
+      opts['hosts'] = uri.host if uri.host
+      opts['username'] = uri.user if uri.user
+      opts['password'] = uri.password if uri.password
+      opts['port'] = uri.port if uri.port
+      opts['db_name'] = uri.path.tr('/','') if uri.path.tr('/','').size > 0
+
+      opts
+    end
+
     def extract_tbl_from_sql(sql_str)
       return $1 if sql_str =~ /from\s+(\w*)\s*/
 

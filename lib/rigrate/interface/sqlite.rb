@@ -4,14 +4,11 @@ require 'sqlite3'
 
 module Rigrate
   class Sqlite < Driver
-    def initialize(opts = {})
-      default_opts = {
-        file: ":memory:"
-      }
+    def initialize(uri = nil)
+      uri ||= URI.parse(default_uri)
+      opts = params_format(uri)
 
-      default_opts.merge! params_filter(opts)
-
-      @db = ::SQLite3::Database.new(*default_opts.values)
+      @db = ::SQLite3::Database.new(opts['file'], opts)
     end
 
     def select(sql, *args)
@@ -67,12 +64,17 @@ module Rigrate
       cols
     end
 
-    def params_filter(args = {})
-      valid_key = ['file']
+    def params_format(uri = {})
+      args = {}
 
-      args.select do |k, v|
-        valid_key.include? k.to_s
+      if args['hosts'].downcase == 'memory'
+        args['hosts'] = ':memory:'
+      else
+        File.join(args['hosts'], )
       end
+      args['file'] = args['hosts'] if args['hosts']
+
+      args
     end
   end
 end

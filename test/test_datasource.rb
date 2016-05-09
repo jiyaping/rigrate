@@ -2,7 +2,7 @@ require File.expand_path('../test_helper', __FILE__)
 
 class DataSourceTest < TestHelper
   def setup
-    @ds = DataSource.new("sqlite://")
+    @ds = DataSource.new("sqlite://memory")
 
     setup_sql =<<SQL
     create table users (
@@ -27,8 +27,13 @@ SQL
     @ds.dbh.execute_batch(setup_sql)
   end
 
-  def test_new_data_srouce
+  def test_new_data_source
     assert @ds
+  end
+
+  def test_new_data_source
+    puts "////////#{File.join(Dir.tmpdir, 'tmptest.sqlite3')}"
+    assert DataSource.new("sqlite://#{File.join(Dir.tmpdir, 'tmptest.sqlite3')}")
   end
 
   def test_build_sql

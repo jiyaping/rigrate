@@ -123,7 +123,8 @@ SQL
       rs.column_info = [Column.new('name1', :type1),
                         Column.new('name2', :type2)]
       rs.rows = [Row.new([1, 112]), 
-                Row.new([2, 122])]
+                Row.new([2, 122]),
+                Row.new([3, 122])]
     end
 
     rs2 = ResultSet.new.tap do |rs|
@@ -137,10 +138,13 @@ SQL
 
     rs = rs1.join(rs2, :name1 => :name5)
     # rows size is 3
-    assert_equal 3, rs.rows.size
+    assert_equal 4, rs.rows.size
     # column size is 4
     assert_equal 4, rs.column_info.size
-  end
+    # column name1 should fill with 2 nil
+    row = rs.rows.select {|row| row[0] == 3}.first
+    assert_equal 2, row.data.select {|field| field.nil?}.size
+  end 
 
   def test_minus_1
     rs1 = ResultSet.new.tap do |rs|
