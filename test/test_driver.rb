@@ -36,4 +36,10 @@ class DriverTest < TestHelper
     execpt_size = @inst_str.length
     assert_equal execpt_size, @driver.length
   end
+
+  def test_extract_conn_param
+    result = @driver.send(:extract_conn_param, URI.parse("mysql://localhost:3306"))
+    assert_equal result.size, 3
+    assert_equal result['db_type'], 'mysql'
+  end
 end

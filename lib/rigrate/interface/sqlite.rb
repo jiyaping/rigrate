@@ -4,11 +4,13 @@ require 'sqlite3'
 
 module Rigrate
   class Sqlite < Driver
-    def initialize(uri = nil)
-      uri ||= URI.parse(default_uri)
-      opts = params_format(uri)
+    def initialize(url = nil)
+      url ||= "sqlite://memory"
 
-      @db = ::SQLite3::Database.new(opts['file'], opts)
+      opts = extract_conn_param(URI.parse(url))
+      file = extract_db_path(url)
+
+      @db = ::SQLite3::Database.new(file, opts)
     end
 
     def select(sql, *args)
@@ -40,7 +42,12 @@ module Rigrate
     end
 
     def update(sql, *args)
-      @db.execute sql, *args
+      begin
+        @db.execute sql, *args
+      rescue SQLite3::SQLException => e
+        puts "SQL: #{sql} ARGS:#{args}"
+        raise e
+      end
     end
 
     def insert(sql, *args)
@@ -64,17 +71,18 @@ module Rigrate
       cols
     end
 
-    def params_format(uri = {})
-      args = {}
+    def extract_db_path(path)
+      result = ":memory:"
 
-      if args['hosts'].downcase == 'memory'
-        args['hosts'] = ':memory:'
-      else
-        File.join(args['hosts'], )
+      if path =~ /sqlite:\/\/(.*)/
+        if $1 == 'memory'
+          result = ":memory:"
+        else
+          result = $1
+        end
       end
-      args['file'] = args['hosts'] if args['hosts']
 
-      args
+      result
     end
   end
 end

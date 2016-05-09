@@ -2,13 +2,9 @@ require File.expand_path('../test_helper', __FILE__)
 
 class ResultSetTest < TestHelper
   def setup
-    opts = {
-      file: ":memory:"
-    }
-
     @tbl_name = 'users'
 
-    @db =  Sqlite.new(opts)
+    @db =  Sqlite.new
     setup_sql =<<SQL
     create table users (
       id integer primary key not null,

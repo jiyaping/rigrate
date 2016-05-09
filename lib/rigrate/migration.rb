@@ -34,9 +34,9 @@ module Rigrate
       rs_source = instance_eval rs_first_str
       rs_target = instance_eval rs_second_str
 
-      condition = eval "{#{condition}}" unless condition.nil?
+      condition = condition.value if condition
       if ResultSet === rs_source && ResultSet === rs_target
-        return rs_source.migrate_from(rs_target, condition)
+        return rs_target.migrate_from(rs_source, condition)
       else
         raise Exception.new('rs_target or rs_source is not a resultset.')
       end

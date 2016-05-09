@@ -103,8 +103,8 @@ module Rigrate
 
       condition = eval "{#{condition}}" unless condition.nil?
       unless condition.nil?
-        src_cols_idx = column_idx(condition.keys)
-        tg_cols_idx = column_idx(condition.values)
+        src_cols_idx = src_rs.column_idx(*condition.keys)
+        tg_cols_idx = column_idx(*condition.values)
 
         @rows += handle_rows(src_rs.rows, src_cols_idx, tg_cols_idx)
       else
@@ -155,11 +155,9 @@ module Rigrate
     def save!(condition = nil)
       begin
         # begin transation
-        # handler delete
         handle_delete!
-        # handler insert
         handle_insert!
-        # handler update
+        condition = condition.values if condition
         handle_update!(condition)
         # end transation
       rescue Exception => e

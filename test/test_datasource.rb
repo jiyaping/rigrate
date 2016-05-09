@@ -32,19 +32,12 @@ SQL
   end
 
   def test_new_data_source
-    puts "////////#{File.join(Dir.tmpdir, 'tmptest.sqlite3')}"
     assert DataSource.new("sqlite://#{File.join(Dir.tmpdir, 'tmptest.sqlite3')}")
   end
 
   def test_build_sql
     assert_equal "select * from user", @ds.send(:build_sql, 'user')
     assert_equal "select name,age from user", @ds.send(:build_sql, 'user', 'name', 'age')
-  end
-
-  def test_extract_conn_param
-    result = @ds.send(:extract_conn_param, URI.parse("mysql://localhost:3306"))
-    assert_equal result.size, 3
-    assert_equal result['db_type'], 'mysql'
   end
 
   def test_sql_block_given

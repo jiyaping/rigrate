@@ -116,7 +116,7 @@ module Rigrate
     end
 
     def parsing
-      full_parser token.dup
+      full_parse tokens.dup
     end
 
     #private
@@ -129,7 +129,6 @@ module Rigrate
 
     def parse_rs_or_migrate_exp(tks)
       token = tks.shift
-      puts "token : #{token}"
 
       if token.type == TokenType::RUBY_STR
         v1 = self_eval token.value

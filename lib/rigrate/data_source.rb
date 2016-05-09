@@ -8,11 +8,16 @@ module Rigrate
 
     def initialize(conn_uri)
       uri = URI.parse(conn_uri)
-      @dbh = eval(uri.scheme.capitalize).new uri
+      @dbh = eval(uri.scheme.capitalize).new conn_uri
     end
 
     def sql(str, *args)
-      @dbh.select(str, *args)
+      begin
+        @dbh.select(str, *args)
+      rescue SQLite3::SQLException => e
+        puts "DB: #{@dbh.inspect} SQL: #{str}"
+        raise e
+      end
     end
 
     def method_missing(mth, *args, &block)

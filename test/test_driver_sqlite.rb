@@ -2,13 +2,9 @@ require File.expand_path('../test_helper', __FILE__)
 
 class SqliteTest < TestHelper
   def setup
-    opts = {
-      file: ":memory:"
-    }
-
     @tbl_name = 'users'
 
-    @db =  Sqlite.new(opts)
+    @db =  Sqlite.new
     setup_sql =<<SQL
     create table users (
       id integer primary key not null,
@@ -76,6 +72,11 @@ SQL
 
   def test_delete
     assert @db.delete("delete from users where id=?", [1])
+  end
+
+  def test_extract_db_path
+    assert ":memory:", @db.extract_db_path("sqlite://memory")
+    assert "/home/test.db", @db.extract_db_path("sqlite://home/test.db")
   end
 
   def teardown

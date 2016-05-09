@@ -61,7 +61,7 @@ class MigrationTest < TestHelper
     rs = @obj.oa.dbh.select("select flag from users")
 
     assert_equal 5, rs.size
-    assert_equal 'hr', rs.rows.first[0]
+    assert_equal 'oa', rs.rows.first[0]
   end
 
   def test_migrate_parted_record
