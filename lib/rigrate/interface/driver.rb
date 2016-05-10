@@ -19,7 +19,7 @@ module Rigrate
     def extract_conn_param(uri)
       opts = {}
       opts['db_type'] = uri.scheme if uri.scheme
-      opts['hosts'] = uri.host if uri.host
+      opts['host'] = uri.host if uri.host
       opts['username'] = uri.user if uri.user
       opts['password'] = uri.password if uri.password
       opts['port'] = uri.port if uri.port

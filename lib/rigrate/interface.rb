@@ -1,9 +1,11 @@
 # encoding : utf-8
 
+require 'uri'
 require 'rigrate/interface/driver'
 require 'rigrate/interface/result_set'
 require 'rigrate/interface/row'
 require 'rigrate/interface/sqlite'
+require 'rigrate/interface/mysql'
 
 module Rigrate
   def self.lazy_load_driver(driver_name)
@@ -15,4 +17,3 @@ module Rigrate
     require driver_path
   end
 end
-
