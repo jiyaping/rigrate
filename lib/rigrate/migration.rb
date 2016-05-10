@@ -13,6 +13,17 @@ module Rigrate
       end
     end
 
+    def minus(rs_first_str, rs_second_str)
+      rs_first = instance_eval rs_first_str
+      rs_second = instance_eval rs_second_str
+
+      if ResultSet === rs_first && ResultSet === rs_second
+        return rs_first.minus rs_second
+      else
+        raise Exception.new('rs_first or rs_second is not a resultset')
+      end
+    end
+
     def join(rs_first_str, rs_second_str, condition = nil)
       condition = eval("{#{condition}}") unless condition.nil?
 
@@ -31,7 +42,11 @@ module Rigrate
     # 2. 全表插入 condition
     # 3. 更新
     def migrate(rs_first_str, rs_second_str, condition = nil)
-      rs_source = instance_eval rs_first_str
+      if String === rs_first_str
+        rs_source = instance_eval rs_first_str 
+      else
+        rs_source = rs_first_str
+      end
       rs_target = instance_eval rs_second_str
 
       condition = condition.value if condition
@@ -40,10 +55,6 @@ module Rigrate
       else
         raise Exception.new('rs_target or rs_source is not a resultset.')
       end
-    end
-
-    # TODO ...........
-    def minus
     end
 
     def self_eval(rb_str)

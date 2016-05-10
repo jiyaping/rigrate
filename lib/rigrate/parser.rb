@@ -9,6 +9,7 @@ module Rigrate
       TO        = :TO_TAG
       UNION     = :UNION_TAG
       JOIN      = :JOIN_TAG
+      MINUS     = :MINUS_TAG
       ON        = :ON_TAG
       RUBY_STR  = :RUBY_STR_TAG
     end
@@ -171,7 +172,9 @@ module Rigrate
 
       while true
         token = tks.shift
-        if token.type != TokenType::UNION && token.type != TokenType::JOIN
+        if token.type != TokenType::UNION &&
+           token.type != TokenType::JOIN &&
+           token.type != TokenType::MINUS
           tks.unshift token
           break
         end
@@ -179,13 +182,15 @@ module Rigrate
         v2 = parse_rs_exp(tks)
         if token.type == TokenType::UNION
           v1 = union(v1, v2)
+        elsif token.type == TokenType::MINUS
+          v1 = minus(v1, v2) 
         elsif token.type == TokenType::JOIN
           sub_token = tks.shift
 
           if not sub_token.nil?
             if sub_token.type == TokenType::ON
               cond = tks.shift
-              v1 = join(v1, v2, cond)
+              v1 = join(v1, v2, cond.value)
             else
               tks.unshift sub_token
               v1 = join(v1, v2)
@@ -199,6 +204,7 @@ module Rigrate
       v1
     end
 
+    # TODO return value should change
     def parse_rs_exp(tks)
       token = tks.shift
       return if token.nil?

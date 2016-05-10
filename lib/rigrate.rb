@@ -7,7 +7,10 @@ require 'rigrate/migration'
 require 'rigrate/parser'
 
 module Rigrate
-  def self.run
-    
+  def self.run(file, opts = {})
+    script = File.read(file)
+    parser = Parser.new
+    parser.lex(script)
+    parser.parsing
   end
 end

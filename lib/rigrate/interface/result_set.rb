@@ -133,20 +133,18 @@ module Rigrate
       end
 
       src_rows_data.each do |src_row|
+        fetched = false
         @rows.each do |row|
           if src_row.values(*src_cols_idx) == row.values(*tg_cols_idx)
             # suppose column squence is the same
-            if row.data == src_row.data
-              new_rows_data << row
-            else 
+            if row.data != src_row.data
               row.data = src_row.data
               row.status = RowStatus::UPDATED
-              new_rows_data << row
+              fetched = true
             end
-          else
-            new_rows_data << Row.new(src_row.data, RowStatus::NEW)
           end
         end
+        new_rows_data << Row.new(src_row.data, RowStatus::NEW) unless fetched
       end
 
       new_rows_data
