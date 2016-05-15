@@ -36,11 +36,7 @@ class RowTest < TestHelper
     assert_equal (@r1 + @r2).data.size, r3.size
   end
 
-  def test_row_array_method
-    assert_equal 1, @r1.first
-  end
-
-  def test_row_array_method
+  def test_row_array_method_2
     assert_equal 1, @r1[0]
   end
 

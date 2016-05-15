@@ -37,22 +37,22 @@ module Rigrate
       resultset.save!
     end
 
-    def delete(sql, *args)
-      @db.execute sql, *args
-    end
-
     def update(sql, *args)
       begin
-        @db.execute sql, *args
+        stm = @db.prepare sql
+        args.each do |row|
+          if Rigrate::Row === row
+            row = row.data
+          end
+          stm.execute(*row)
+        end
       rescue SQLite3::SQLException => e
-        puts "SQL: #{sql} ARGS:#{args}"
+        Rigrate.logger.error "SQL: #{sql} ARGS:#{args}"
         raise e
       end
     end
-
-    def insert(sql, *args)
-      @db.execute sql, *args
-    end
+    alias :insert :update
+    alias :delete :update
 
     def primary_key(tbl_name)
       (@db.table_info(tbl_name).select do |col_hash|
@@ -83,6 +83,14 @@ module Rigrate
       end
 
       result
+    end
+
+    def transaction
+      @db.transaction
+    end
+
+    def commit
+      @db.commit
     end
   end
 end

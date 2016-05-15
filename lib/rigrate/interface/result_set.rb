@@ -1,4 +1,4 @@
-# encoding : utf-8
+  # encoding : utf-8
 
 module Rigrate
   class ResultSet
@@ -8,7 +8,6 @@ module Rigrate
 
     # join two table by given field { :jc => :job_code }
     def join(source_rs, key_fields = {})
-      # TODO when key_fields is empty
       if key_fields.size <= 0
         raise ResultSetError.new("must specify the join condition.")
       end
@@ -32,14 +31,14 @@ module Rigrate
         rs.rows = @rows.inject([]) do |new_rows, row|
           origin_rs_key_values = row.values(*origin_rs_idx)
 
-          selected_source_rs_row = source_rs.rows.select do |row|
-            row.values(*source_rs_idx) == origin_rs_key_values
+          selected_source_rs_row = source_rs.rows.select do |r|
+            r.values(*source_rs_idx) == origin_rs_key_values
           end
 
           # remove duplicate data columns
-          selected_source_rs_row.map! do |row|
+          selected_source_rs_row.map! do |r|
             data = []
-            row.data.each_with_index do |value, idx|
+            r.data.each_with_index do |value, idx|
               data << value unless source_rs_idx.include? idx
             end
 
@@ -121,8 +120,9 @@ module Rigrate
 
       # condition parameter is null , so delete all ROWS. and then copy the source rs
       if src_cols_idx.nil? && tg_cols_idx.nil?
-        src_size = src_rows_data.first.size
-        dest_size = column_info.size
+        # TODO check the size 
+        # src_size = src_rows_data.first.size
+        # dest_size = column_info.size
 
         # delete all the dest rs data
         @rows.map { |row| row.status = RowStatus::DELETE }
@@ -152,15 +152,16 @@ module Rigrate
 
     def save!(condition = nil)
       begin
-        # begin transation
+        @db.transaction if Rigrate.config[:strict]
         handle_delete!
         handle_insert!
         condition = condition.values if condition
         handle_update!(condition)
-        # end transation
+        @db.commit if @db.transaction_active?
       rescue Exception => e
+        Rigrate.logger.error("saving resultset error: #{e}")
         raise e
-        # rollback
+        @db.rollback if @db.transaction_active?
       end
     end
 
@@ -171,15 +172,12 @@ module Rigrate
         row.status == RowStatus::NEW
       end
 
-      op_rows.each do |row|
-        @db.insert sql, row.data
-      end
+      @db.insert sql, *op_rows if op_rows.size > 0
     end
 
     def handle_update!(condition = nil)
-      sql = get_sql(:update, condition)
-
       key_fields = (condition || primary_key)
+      sql = get_sql(:update, key_fields)
       param_fields = column_info.reject do |col|
         key_fields.include? col.name
       end.map { |col| col.name }
@@ -188,13 +186,14 @@ module Rigrate
         row.status == RowStatus::UPDATED
       end
 
-      op_rows.each do |row|
-        # get key value
-        key_values = row.values(*column_idx(*key_fields))
-        params_values = row.values(*column_idx(*param_fields))
+      formated_rows = op_rows.map do |row|
+                        # get key values
+                        key_values = row.values(*column_idx(*key_fields))
+                        params_values = row.values(*column_idx(*param_fields))
 
-        @db.update sql, (params_values + key_values)
-      end
+                        params_values + key_values
+                      end
+      @db.update sql, *formated_rows if formated_rows.size > 0
     end
 
     def handle_delete!
@@ -204,9 +203,7 @@ module Rigrate
         row.status == RowStatus::DELETE
       end
 
-      op_rows.each do |row|
-        @db.delete sql, row.data
-      end
+      @db.delete sql, *op_rows if op_rows.size > 0
     end
 
     def get_sql(type, condition = nil)
@@ -217,8 +214,7 @@ module Rigrate
 
         "insert into #{target_tbl_name} (#{params_str}) values (#{values_str})"
       when :update
-        condi_fields = (condition || primary_key)
-
+        condi_fields = condition || primary_key
         params_str = condi_fields.map do |col|
           "#{col}=?"
         end.join(' and ')
@@ -273,10 +269,6 @@ module Rigrate
       end
     end
 
-    def primary_key
-      @primary_key ||= @db.primary_key(@target_tbl_name)
-    end
-
     def include?(p_row)
       @rows.each do |row|
         return true if row.data == p_row.data
@@ -287,6 +279,10 @@ module Rigrate
 
     def size
       @rows.size
+    end
+
+    def primary_key
+      @primary_key ||= @db.primary_key(@target_tbl_name)
     end
 
     private

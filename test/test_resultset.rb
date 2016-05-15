@@ -52,13 +52,10 @@ SQL
   end
 
   def test_get_columns_idx
-    origin_columns = ['id', 'name', 'age', 'birthday']
-
     assert_equal [1, 2], @rs.send(:column_idx, :name, :age)
   end
 
   def test_get_columns_idx2
-    origin_columns = ['id', 'name', 'age', 'birthday']
     assert_equal [], @rs.send(:column_idx, :testtesttest)
   end
 
@@ -138,7 +135,7 @@ SQL
     # column size is 4
     assert_equal 4, rs.column_info.size
     # column name1 should fill with 2 nil
-    row = rs.rows.select {|row| row[0] == 3}.first
+    row = rs.rows.select {|r| r[0] == 3}.first
     assert_equal 2, row.data.select {|field| field.nil?}.size
   end 
 

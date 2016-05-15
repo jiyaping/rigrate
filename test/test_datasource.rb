@@ -31,7 +31,7 @@ SQL
     assert @ds
   end
 
-  def test_new_data_source
+  def test_new_data_source_2
     assert DataSource.new("sqlite://#{File.join(Dir.tmpdir, 'tmptest.sqlite3')}")
   end
 

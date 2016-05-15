@@ -111,9 +111,8 @@ module Rigrate
         end
       end
 
-      # handler 
-
-      @tokens
+      Rigrate.logger.debug("#{str} -> #{tokens}")
+      self
     end
 
     def parsing

@@ -4,9 +4,11 @@ require 'mysql'
 
 module Rigrate
   class Mysql < Driver
+    attr_accessor :transaction_active
+
     def initialize(uri)
       default_opts = {
-        host: nil,
+        host: '127.0.0.1',
         user: nil,
         passwd: nil,
         db: nil,
@@ -30,7 +32,7 @@ module Rigrate
         rs.db = self
         rs.target_tbl_name = target_tbl_name
         rs.column_info = statement_fields(stm)
-        result = stm.execute *args
+        result = stm.execute(*args)
         rs.rows = []
         while row = result.fetch
           new_row = Row.new(to_rb_row(row))
@@ -46,21 +48,22 @@ module Rigrate
       resultset.save!
     end
 
-    def delete(sql, *args)
-      puts "/////////#{sql} -------- #{args}"
-      stm = @db.prepare(sql)
-      stm.execute *args.first
-    end
-
-    def insert(sql, *args)
-      stm = @db.prepare(sql)
-      stm.execute *args.first
-    end
-
     def update(sql, *args)
-      stm = @db.prepare sql
-      stm.execute *args.first
+      begin
+        stm = @db.prepare sql
+        args.each do |row|
+          if Rigrate::Row === row
+            row = row.data
+          end
+          stm.execute(*row)
+        end
+      rescue Exception => e
+        Rigrate.logger.error "SQL: #{sql} ARGS:#{args}"
+        raise e
+      end
     end
+    alias :insert :update
+    alias :delete :update
 
     def primary_key(tbl_name)
       tbl_name = tbl_name.to_s
@@ -120,6 +123,27 @@ module Rigrate
       args[:db] = uri.path.sub('/','') if uri.path.size > 1
 
       args
+    end
+
+    def transaction_active?
+      @transaction_active
+    end
+
+    def transaction
+      @db.autocommit false
+      @transaction_active = true
+    end
+
+    def commit
+      @db.commit
+      @db.autocommit true
+      @transaction_active = false
+    end
+
+    def rollback
+      @db.rollback
+      @db.autocommit true
+      @transaction_active = false
     end
   end
 end

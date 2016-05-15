@@ -70,12 +70,11 @@ class MigrationTest < TestHelper
 
     @obj.migrate(rs_first_str, rs_second_str)
 
-    rs = @obj.oa.dbh.select("select count(*) nn from users where flag='hr'")
-
+    rs = @obj.hr.dbh.select("select count(*) from users where flag='oa'")
     assert_equal 1, rs.rows.first[0]
   end
 
-  def test_migrate_parted_record
+  def test_migrate_parted_record_2
     # include delete, updated, insert (when target record exists in db but not in rs)
   end
 

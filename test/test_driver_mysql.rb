@@ -8,7 +8,7 @@ class Mysqltest < TestHelper
     stm1 = @db.prepare("insert into tbl1 values(?,?,?,?,?)")
     10.times do |i|
       args = [i, "jyp#{i}", 20+i, 'tbl1', "2001-01-#{1+i}"]
-      stm1.execute *args
+      stm1.execute(*args)
     end
 
     stm1 = @db.prepare(get_seed_data('tbl2'))
@@ -16,7 +16,7 @@ class Mysqltest < TestHelper
     stm1 = @db.prepare("insert into tbl2 values(?,?,?,?,?)")
     5.times do |i|
       args = [i, "jyp#{i}", 20+i, 'tbl2', "2001-02-#{1+i}"]
-      stm1.execute *args
+      stm1.execute(*args)
     end
   end
 

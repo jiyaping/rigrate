@@ -21,16 +21,16 @@ class ParserTest < TestHelper
   end
 
   def test_lex
-    tokens = @parser.lex("from oa.user to hr.account")
+    @parser.lex("from oa.user to hr.account")
 
-    assert_equal 4, tokens.size
+    assert_equal 4, @parser.tokens.size
     assert_equal 4, @parser.tokens.size
   end
 
   def test_lex2
-    tokens = @parser.lex("FroM oa.sql('select * from user')\
+    @parser.lex("FroM oa.sql('select * from user')\
      to hr.account on :jc=>:job_code")
-    assert_equal 6, tokens.size
+    assert_equal 6, @parser.tokens.size
   end
 
   def test_lex3
@@ -45,8 +45,8 @@ class ParserTest < TestHelper
       oa_test.user(:id)
     on :job_code=>:jc
 EOF
-   tokens = @parser.lex(str) 
-   assert_equal 10, tokens.size
+   @parser.lex(str) 
+   assert_equal 10, @parser.tokens.size
   end
 
   def test_parser_full_migration
@@ -109,6 +109,8 @@ SCRIPT
 
     db = DataSource.new("sqlite://#{File.join(Dir.tmpdir, 'hr.sqlite3')}")
     rs = db.dbh.select("select * from users")
+    # TODO need rework
+    assert rs
   end
 
   def test_parser_join_result
@@ -202,7 +204,6 @@ SCRIPT
     parser.parsing
 
     db = DataSource.new("sqlite://#{File.join(Dir.tmpdir, 'oa.sqlite3')}")
-    db2 = DataSource.new("sqlite://#{File.join(Dir.tmpdir, 'hr.sqlite3')}")
     rs = db.dbh.select("select * from users")
     rs2 = db.dbh.select('select * from users')
     assert_equal 10, rs.size
