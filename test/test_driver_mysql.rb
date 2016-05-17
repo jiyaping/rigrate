@@ -24,6 +24,28 @@ class Mysqltest < TestHelper
     assert @db
   end
 
+  def test_transaction?
+    assert_respond_to @db, :transaction_active?
+  end
+
+  def test_blob_read_and_write
+    stm = @db.prepare("create table if not exists test_blob(id integer, pic blob)")
+    stm.execute
+
+    # insert blob
+    test_str = "xxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    stm_i = @db.prepare("insert into test_blob values(?,?)")
+    assert stm_i.execute(1, test_str)
+
+    # read blob
+    rs = @db.select("select * from test_blob")
+    assert test_str, rs.rows.first[1]
+
+    # clean db
+    stm = @db.prepare("drop table test_blob")
+    stm.execute
+  end
+
   def test_mysql_migration
     str =<<SCRIPT
     ds :oa, "mysql://root:20080802@127.0.0.1/test"

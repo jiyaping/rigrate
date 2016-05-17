@@ -212,9 +212,11 @@ SCRIPT
   end 
 
   def teardown
+    @hr.execute('drop table users')
     @hr.close
+    @oa.execute('drop table users')
     @oa.close
-    FileUtils.rm File.join(Dir.tmpdir, 'oa.sqlite3')
-    FileUtils.rm File.join(Dir.tmpdir, 'hr.sqlite3') 
+    # FileUtils.rm File.join(Dir.tmpdir, 'oa.sqlite3')
+    # FileUtils.rm File.join(Dir.tmpdir, 'hr.sqlite3') 
   end
 end

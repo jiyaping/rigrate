@@ -152,6 +152,11 @@ module Rigrate
 
     def save!(condition = nil)
       begin
+        # convert all to native row
+        @rows.map do |row|
+          convert_to_native_row(row)
+        end
+
         @db.transaction if Rigrate.config[:strict]
         handle_delete!
         handle_insert!
@@ -275,6 +280,10 @@ module Rigrate
       end
 
       false
+    end
+
+    def convert_to_native_row(row)
+      @db.to_native_row(row, @column_info)
     end
 
     def size

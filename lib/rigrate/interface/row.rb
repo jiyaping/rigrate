@@ -1,12 +1,16 @@
 # encoding : utf-8
 
 module Rigrate
+  # start
 	module RowStatus
     NEW     =  :NEW
     UPDATED =  :UPDATED
     DELETE  =  :DELETE
     ORIGIN  =  :ORIGIN
+
+    def test; end
   end
+  # end
 
   class Row
     attr_accessor :data
@@ -47,9 +51,9 @@ module Rigrate
       @data[idx]
     end
 
-    def []=(idx, val)
+    def []=(idx, val, status_force = true)
       @data[idx] = val
-      @status = RowStatus::UPDATED
+      @status = RowStatus::UPDATED if status_force
     end
 
     def size

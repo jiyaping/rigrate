@@ -6,6 +6,7 @@ require 'rigrate/interface/result_set'
 require 'rigrate/interface/row'
 require 'rigrate/interface/sqlite'
 require 'rigrate/interface/mysql'
+require 'rigrate/interface/oracle'
 
 module Rigrate
   def self.lazy_load_driver(driver_name)

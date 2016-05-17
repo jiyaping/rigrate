@@ -22,6 +22,7 @@ module Rigrate
       end
 
       @db = ::Mysql.connect(*default_opts.values)
+      @transaction_active = false
     end
 
     def select(sql, *args)
@@ -68,9 +69,9 @@ module Rigrate
     def primary_key(tbl_name)
       tbl_name = tbl_name.to_s
 
-      (db.list_fields(tbl_name).fetch_fields.select do |field|
+      db.list_fields(tbl_name).fetch_fields.select do |field|
         field.is_pri_key?
-      end).map(&:name)
+      end.map(&:name)
     end
 
     def statement_fields(stm)
@@ -80,8 +81,6 @@ module Rigrate
         cols << Column.new(field.name, get_field_type(field.type))
       end
     end
-
-    private
 
     def to_rb_row(mysql_row)
       mysql_row.map do |field|

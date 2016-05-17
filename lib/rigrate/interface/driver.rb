@@ -28,6 +28,10 @@ module Rigrate
       opts
     end
 
+    def to_native_row(row, column_info)
+      row
+    end
+
     def extract_tbl_from_sql(sql_str)
       return $1 if sql_str =~ /from\s+(\w*)\s*/
 
