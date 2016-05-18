@@ -95,7 +95,6 @@ SCRIPT
     parser = Parser.new
     parser.lex(str).parsing
     @rs = @db.select("select * from test_blob2")
-    puts "222222222222#{@rs.inspect}"
     assert_equal 2, @rs.size
     assert_equal @test_str, @rs.rows.first[1]
   end

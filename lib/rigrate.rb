@@ -26,7 +26,7 @@ module Rigrate
     script = File.read(file)
     parser = Parser.new
     # loading data source
-    if config[:ds]
+    if File.exist? config[:ds]
       parser.lex(File.read(config[:ds])).parsing
     end
 

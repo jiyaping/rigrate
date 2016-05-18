@@ -72,9 +72,20 @@ module Rigrate
           new_val = OCI8::CLOB.new(@db, row[idx])
         when :bclob
           new_val = OCI8::NCLOB.new(@db, row[idx])
+        when :date
+          if row[idx]
+            new_val = Time.new(row[idx])
+          else
+            new_val = ''
+          end
         else
           new_val = row[idx]
         end
+
+        if new_val.nil?
+          new_val = ''
+        end
+
         row.[]=(idx, new_val, false)
       end
 
@@ -86,6 +97,8 @@ module Rigrate
         type = field.class
         if [OCI8::BLOB, OCI8::CLOB, OCI8::NCLOB].include? type
           field.read
+        elsif Time == type
+          field.to_s          
         else
           field
         end
