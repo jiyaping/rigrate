@@ -33,8 +33,17 @@ class ParserTest < TestHelper
     assert_equal 6, @parser.tokens.size
   end
 
+  def test_lext4
+    @parser.lex("FroM oa.sql('select * from user')\
+     to hr.account on :jc=>:job_code using :echo")
+    assert_equal 8, @parser.tokens.size
+    assert_equal :USING_TAG, @parser.tokens[-2].type
+  end
+
   def test_lex3
     str =<<EOF
+    # comment test
+    # comment 2222
     from 
       oa.user(:id) 
       join
@@ -44,9 +53,10 @@ class ParserTest < TestHelper
     to
       oa_test.user(:id)
     on :job_code=>:jc
+    using :sync
 EOF
    @parser.lex(str) 
-   assert_equal 10, @parser.tokens.size
+   assert_equal 13, @parser.tokens.size
   end
 
   def test_parser_full_migration
@@ -189,6 +199,36 @@ SCRIPT
     assert_equal 'oa', rs.rows.first[3]
   end
 
+  def test_echo_and_mode
+    str_echo =<<SCRIPT
+    ds :oa, "sqlite://#{File.join(Dir.tmpdir, 'oa.sqlite3')}"
+    ds :hr, "sqlite://#{File.join(Dir.tmpdir, 'hr.sqlite3')}"
+
+    from oa.users to hr.users using :echo
+SCRIPT
+    
+     # migration
+    parser = Parser.new
+    parser.lex(str_echo).parsing
+    db = DataSource.new("sqlite://#{File.join(Dir.tmpdir, 'hr.sqlite3')}")
+    assert_equal 10, db.dbh.select("select * from users").size
+  end
+
+  def test_contribute_and_mode
+    str_echo =<<SCRIPT
+    ds :oa, "sqlite://#{File.join(Dir.tmpdir, 'oa.sqlite3')}"
+    ds :hr, "sqlite://#{File.join(Dir.tmpdir, 'hr.sqlite3')}"
+
+    from oa.users to hr.users using :contribute
+SCRIPT
+    
+    # migration
+    parser = Parser.new
+    parser.lex(str_echo).parsing
+    db = DataSource.new("sqlite://#{File.join(Dir.tmpdir, 'hr.sqlite3')}")
+    assert_equal 15, db.dbh.select("select * from users").size
+  end
+
   def test_multi_migration_task
     str =<<SCRIPT
     ds :oa, "sqlite://#{File.join(Dir.tmpdir, 'oa.sqlite3')}"
@@ -209,7 +249,7 @@ SCRIPT
     assert_equal 10, rs.size
     assert_equal 10, rs2.size
     assert_equal 'oa', rs.rows.first[3]
-  end 
+  end
 
   def teardown
     @hr.execute('drop table users')

@@ -73,7 +73,7 @@ class OracleTest < TestHelper
     str =<<SCRIPT
     ds :oa, "oracle://scott:1234567@jtest"
     ds :hr, "oracle://scott:1234567@jtest"
-
+    
     from oa.user1 to hr.user2
 SCRIPT
 

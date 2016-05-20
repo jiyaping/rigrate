@@ -8,6 +8,7 @@ module Rigrate
       key_params = [:username, :password, :sid, :privilege]
       opts = params_pack(extract_from_db_path(uri), key_params)
       @db = OCI8.new(*opts.values)
+      @db.autocommit = true
     end
 
     def select(sql, *args)
@@ -31,13 +32,17 @@ module Rigrate
 
     def execute(sql, *args)
       sql = convert_question_mark_to_symbol(sql, args.first.size)
-
-      cursor = @db.parse(sql)
-      args.each do |row|
-        if Rigrate::Row === row
-          row = row.data
+      begin
+        cursor = @db.parse(sql)
+        args.each do |row|
+          if Rigrate::Row === row
+            row = row.data
+          end
+          cursor.exec(*row)
         end
-        cursor.exec(*row)
+      rescue Exception => e
+         Rigrate.logger.error("execute SQL [#{sql}] ARGS #{args.inspect} -> #{e.backtrace}")
+         raise e
       end
     end
     alias :insert :execute
@@ -74,7 +79,8 @@ module Rigrate
           new_val = OCI8::NCLOB.new(@db, row[idx])
         when :date
           if row[idx]
-            new_val = Time.new(row[idx])
+            #puts "////#{row[idx].inspect}"
+            new_val = Time.parse(row[idx])
           else
             new_val = ''
           end

@@ -38,10 +38,7 @@ module Rigrate
     end
 
     # migration mode
-    # 1. 增量插入
-    # 2. 全表插入 condition
-    # 3. 更新
-    def migrate(rs_first_str, rs_second_str, condition = nil)
+    def migrate(rs_first_str, rs_second_str, condition = nil, mode = nil)
       if String === rs_first_str
         rs_source = instance_eval rs_first_str 
       else
@@ -49,9 +46,13 @@ module Rigrate
       end
       rs_target = instance_eval rs_second_str
 
-      condition = condition.value if condition
+      default_opts = { :mode => Rigrate.config[:mode] }
+      if mode
+        default_opts[:mode] = instance_eval("#{mode}")
+      end
+
       if ResultSet === rs_source && ResultSet === rs_target
-        return rs_target.migrate_from(rs_source, condition)
+        return rs_target.migrate_from(rs_source, condition, default_opts)
       else
         raise Exception.new('rs_target or rs_source is not a resultset.')
       end

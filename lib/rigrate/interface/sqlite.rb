@@ -46,8 +46,8 @@ module Rigrate
           end
           stm.execute(*row)
         end
-      rescue SQLite3::SQLException => e
-        Rigrate.logger.error "SQL: #{sql} ARGS:#{args}"
+      rescue Exception => e
+        Rigrate.logger.error "SQL: #{sql} ARGS:#{args} -> #{e.backtrace}"
         raise e
       end
     end

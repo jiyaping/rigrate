@@ -11,6 +11,7 @@ module Rigrate
       JOIN      = :JOIN_TAG
       MINUS     = :MINUS_TAG
       ON        = :ON_TAG
+      USING     = :USING_TAG
       RUBY_STR  = :RUBY_STR_TAG
     end
 
@@ -24,12 +25,15 @@ module Rigrate
       IN_KEYWORD  = :IN_KEYWORD_STATUS
       IN_RUBY_CODE= :IN_RUBY_CODE_STATUS
       IN_RUBY_STR = :IN_RUBY_STR_STATUS
+      IN_COMMENT  = :IN_COMMENT_STATUS
     end
 
     Token = Struct.new(:type, :value)
-
     attr_accessor :tokens
 
+    ##
+    # load script str -> tokens
+    #  TODO there is a bug need to fixed, when comment str include FROM key word will praser error.
     def lex(str)
       status = LexStatus::INIT
       @tokens = []
@@ -111,7 +115,7 @@ module Rigrate
         end
       end
 
-      Rigrate.logger.debug("#{str} -> #{tokens}")
+      Rigrate.logger.debug("lex parsing status : #{str} -> #{tokens}")
       self
     end
 
@@ -149,19 +153,24 @@ module Rigrate
         sub_token = tks.shift
         if sub_token.type == TokenType::TO
           v2 = parse_rs_exp(tks)
+          v3 = parse_condition_exp(tks)
+          v4 = parse_using_exp(tks)
+          migrate(v1, v2, v3, v4)
 
-          sub_token_1 = tks.shift
-          if not sub_token_1.nil?
-            if sub_token_1.type == TokenType::ON
-              cond = tks.shift
-              migrate(v1, v2, cond)
-            else
-              tks.unshift sub_token_1
-              migrate(v1, v2)
-            end
-          else
-            migrate(v1, v2)
-          end
+          # sub_token_1 = tks.shift
+          # if not sub_token_1.nil?
+          #   if sub_token_1.type == TokenType::ON
+          #     cond = tks.shift
+          #     migrate(v1, v2, cond)
+          #   else
+          #     tks.unshift sub_token_1
+          #     migrate(v1, v2)
+          #   end
+          # else
+          #   migrate(v1, v2)
+          # end
+        else
+          raise ParserError.new("Syntax Error: need TO expression")
         end
       end
     end
@@ -203,6 +212,42 @@ module Rigrate
       v1
     end
 
+    def parse_condition_exp(tks)
+      token = tks.shift
+      return if token.nil?
+
+      if token.type == TokenType::ON
+        v1 = parse_rs_exp(tks)
+
+        if v1.nil?
+          raise ParserError.new("ON expression should end with a [RUBY_STR]")
+        end
+      else
+        tks.unshift token
+        return
+      end
+
+      v1
+    end
+
+    def parse_using_exp(tks)
+      token = tks.shift
+      return if token.nil?
+
+      if token.type == TokenType::USING
+        v1 = parse_rs_exp(tks)
+
+        if v1.nil?
+          raise ParserError.new("USING expression should end with a [RUBY_STR]")
+        end
+      else
+        tks.unshift token
+        return
+      end
+
+      v1
+    end
+
     # TODO return value should change
     def parse_rs_exp(tks)
       token = tks.shift
@@ -210,6 +255,8 @@ module Rigrate
 
       if token.type == TokenType::RUBY_STR
         return token.value
+      else
+        raise ParserError.new("Invalid Syntax")
       end
     end
 

@@ -166,7 +166,7 @@ SQL
     assert_equal "update users set name=?,age=? where id=?", rs.get_sql(:update)
     assert_equal "update users set id=?,name=? where age=?", rs.get_sql(:update, ['age'])
     # get delete
-    assert_equal "delete from users where id=? and name=? and age=?", rs.get_sql(:delete)
+    assert_equal "delete from users where id=?", rs.get_sql(:delete, ['id'])
   end
 
   def test_handle_delete
@@ -231,9 +231,9 @@ SQL
   def test_handle_row
     rs1 = @db.select('select * from users where id = 1')
     rs2 = @db.select('select * from users where id in (1,2)')
-
-    rows = rs1.handle_rows(rs2.rows)
-    assert_equal 2, rows.size
+    mode = :echo
+    rows = rs1.handle_rows(rs2.rows, mode)
+    assert_equal 3, rows.size
     new_rows = rows.select do |r|
       r.status == RowStatus::NEW
     end
@@ -246,10 +246,9 @@ SQL
       r.status == RowStatus::DELETE
     end
 
-
     assert_equal 2, new_rows.size
     assert_equal 0, upd_rows.size
-    assert_equal 0, del_rows.size
+    assert_equal 1, del_rows.size
   end
 
   def test_handle_row2
@@ -291,9 +290,11 @@ SQL
       row.data = [10, 'jiyaping', 25]
     end
 
-    rs1.migrate_from(rs2)
+    rs2.rows.delete_at(3)
+
+    rs1.migrate_from(rs2,nil,{:mode=>:echo})
 
     new_rs = @db.select('select id,name,age from users')
-    assert_equal old_size, (new_rs.size - 1)
+    assert_equal old_size, (new_rs.size)
   end
 end

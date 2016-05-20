@@ -96,58 +96,111 @@ module Rigrate
     end
     alias :minus :-
 
+    # 
+    # There are three modes
+    # :echo is left to right ResultSet, and delete right which is not in left
+    #    +When condition is nil+
+    #       find the primary key as condition
+    #       1. if primary key can't find in ResultSet then delete all record in right side, and insert
+    #          all rows to left side
+    #    +When condition is not nil+
+    #      1. using condition to update existing row in right side 
+    #      2. and insert rows which not included in right side
+    #      3. then delete rows not in left side
+    #
+    # :contribute is left to right, and KEEP the file even it not in left
+    #    +When condition is nil+
+    #      find the primary key as condition
+    #      1. if primary key can't find in Result then insert all rows to left side
+    #    +When condition is not nil+
+    #      1. using condition to update existing row in right side
+    #      2. and insert rows not included in right side
+    #
+    # :sync will keep left and right the same +TODO+
+    #    just keep two side the same
+    #
     def migrate_from(src_rs, condition = nil, opts = {})
-      # full table (direct insert)
-      # part column update (need assoicate condition)
+      Rigrate.logger.info("start migration : source rs [#{src_rs.size}] ->target rs [#{rows.size}]")
+      mode = opts[:mode]
+      condition = eval "{#{condition.to_s.upcase}}" unless condition.nil?
 
-      condition = eval "{#{condition}}" unless condition.nil?
-      unless condition.nil?
+      if condition
         src_cols_idx = src_rs.column_idx(*condition.keys)
         tg_cols_idx = column_idx(*condition.values)
-
-        @rows += handle_rows(src_rs.rows, src_cols_idx, tg_cols_idx)
       else
-        @rows += handle_rows(src_rs.rows)
+        # delete line ->  src_cols_idx = src_rs.column_idx(*src_rs.default_migration_condition)
+        # suppose all primary key of target resultset can be found in src result, and in same column idx
+        tg_cols_idx = column_idx(*default_migration_condition)
+        src_cols_idx = tg_cols_idx
       end
-
+      @rows = handle_rows(src_rs.rows, mode, src_cols_idx, tg_cols_idx)
       save!(condition)
     end
 
     # condition {:name => :c_name, :age => :age}
     # insert or update or delete
-    def handle_rows (src_rows_data, src_cols_idx = nil, tg_cols_idx = nil)
+    def handle_rows (src_rows_data, mode, src_cols_idx = nil, tg_cols_idx = nil)
       new_rows_data = []
 
       # condition parameter is null , so delete all ROWS. and then copy the source rs
-      if src_cols_idx.nil? && tg_cols_idx.nil?
-        # TODO check the size 
-        # src_size = src_rows_data.first.size
-        # dest_size = column_info.size
-
-        # delete all the dest rs data
-        @rows.map { |row| row.status = RowStatus::DELETE }
-
-        src_rows_data = format_rows(src_rows_data, width)
-        # make all rows NEW
-        return src_rows_data.map { |row| row.status = RowStatus::NEW; row }
-      end
-
-      src_rows_data.each do |src_row|
-        fetched = false
-        @rows.each do |row|
-          if src_row.values(*src_cols_idx) == row.values(*tg_cols_idx)
-            # suppose column squence is the same
-            if row.data != src_row.data
-              row.data = src_row.data
-              row.status = RowStatus::UPDATED
-              fetched = true
-            end
+      if src_cols_idx.to_a.size <= 0 && tg_cols_idx.to_a.size <= 0
+        # TODO check the size
+        if mode == :echo
+          # delete all the dest rs data
+          @rows.each do |row| 
+            new_rows_data << Row.new(row.data, RowStatus::DELETE)
           end
         end
-        new_rows_data << Row.new(src_row.data, RowStatus::NEW) unless fetched
+        # :echo and :contribute mode
+        format_rows(src_rows_data, width).map do |row| 
+          new_rows_data << Row.new(row.data, RowStatus::NEW)
+        end
+      else
+        if mode == :echo
+          new_rows_data += delete_not_exist_rows(@rows, src_rows_data, tg_cols_idx, src_cols_idx)
+        end
+        # :echo and :contribute
+        new_rows_data += op_two_rows(@rows, tg_cols_idx, src_rows_data, src_cols_idx)
       end
 
       new_rows_data
+    end
+
+    def op_two_rows(target_rows, target_cols_idx, source_rows, src_cols_idx)
+      result = []
+      source_rows.each do |s_row|
+        s_values = s_row.values(*src_cols_idx)
+        fetched = false
+
+        target_rows.each do |t_row|
+          if s_values == t_row.values(*target_cols_idx)
+            fetched = true
+            if s_row.data != t_row.data
+              result << Row.new(s_row.data, RowStatus::UPDATED)
+            else
+              result << Row.new(s_row.data, RowStatus::ORIGIN)
+            end
+          end
+        end
+        result << Row.new(s_row.data, RowStatus::NEW) unless fetched
+      end
+
+      result
+    end
+
+    def delete_not_exist_rows(target_rows, source_rows, target_cols_idx, src_cols_idx)
+      result = []
+      target_rows.each do |t_row|
+        t_values = t_row.values(*target_cols_idx)
+        fetched = false
+
+        source_rows.each do |s_row|
+          break fetched = true if s_row.values(*src_cols_idx) == t_values
+        end
+        result << Row.new(t_row.data, RowStatus::DELETE) unless fetched
+      end
+
+      result
     end
 
     def save!(condition = nil)
@@ -158,25 +211,26 @@ module Rigrate
         end
 
         @db.transaction if Rigrate.config[:strict]
-        handle_delete!
-        handle_insert!
         condition = condition.values if condition
+        handle_delete!(condition)
+        handle_insert!
         handle_update!(condition)
         @db.commit if @db.transaction_active?
       rescue Exception => e
-        Rigrate.logger.error("saving resultset error: #{e}")
+        Rigrate.logger.error("saving resultset [#{rows.inspect}] error: #{e.message} #{e.backtrace}")
         raise e
         @db.rollback if @db.transaction_active?
       end
     end
 
-    def handle_insert!
+    def handle_insert!()
       sql = get_sql(:insert)
 
       op_rows = @rows.select do |row|
         row.status == RowStatus::NEW
       end
 
+      Rigrate.logger.info("start insert [#{op_rows.size}] rows using sql [#{sql}]")
       @db.insert sql, *op_rows if op_rows.size > 0
     end
 
@@ -191,24 +245,36 @@ module Rigrate
         row.status == RowStatus::UPDATED
       end
 
+      key_idx = column_idx(*key_fields)
+      params_idx = column_idx(*param_fields)
       formated_rows = op_rows.map do |row|
-                        # get key values
-                        key_values = row.values(*column_idx(*key_fields))
-                        params_values = row.values(*column_idx(*param_fields))
+                        key_values = row.values(*key_idx)
+                        params_values = row.values(*params_idx)
 
                         params_values + key_values
                       end
+      Rigrate.logger.info("start update [#{op_rows.size}] rows using sql [#{sql}]")
       @db.update sql, *formated_rows if formated_rows.size > 0
     end
 
-    def handle_delete!
-      sql = get_sql(:delete)
+    def handle_delete!(condition = nil)
+      temp_primary_key = nil
+      temp_primary_key = primary_key if primary_key.size > 0
+      condi_fields = condition || temp_primary_key || column_info.map{ |col| col.name }
+
+      sql = get_sql(:delete, condi_fields)
 
       op_rows = @rows.select do |row|
         row.status == RowStatus::DELETE
       end
 
-      @db.delete sql, *op_rows if op_rows.size > 0
+      params_idx = column_idx(*condi_fields)
+      formated_rows = op_rows.map do |row|
+        row.values(*params_idx)
+      end
+
+      Rigrate.logger.info("start delete [#{op_rows.size}] rows using sql [#{sql}]")
+      @db.delete sql, *formated_rows if formated_rows.size > 0
     end
 
     def get_sql(type, condition = nil)
@@ -233,9 +299,10 @@ module Rigrate
 
         "update #{target_tbl_name} set #{setting_str} where #{params_str}"
       when :delete
-        params_str = (column_info.map do |col|
-          "#{col.name}=?"
-        end).join(' and ')
+        params_str = condition.map do |col|
+          "#{col}=?"
+        end.join(' and ')
+        raise ResultSetError.new("can't get the delete sql") if params_str.to_s.size <= 0
 
         "delete from #{target_tbl_name} where #{params_str}"
       end
@@ -267,7 +334,7 @@ module Rigrate
     def column_idx(*names)
       names.inject([]) do |idxes, name|
         column_info.each_with_index do |col, idx|
-          idxes << idx if col.name == name.to_s
+          idxes << idx if col.name.to_s.downcase == name.to_s.downcase
         end
 
         idxes
@@ -280,6 +347,16 @@ module Rigrate
       end
 
       false
+    end
+
+    def default_migration_condition
+      flag = true
+      cols = @column_info.map { |col| col.name }
+      primary_key.each do |key|
+        flag = false unless cols.include? key
+      end
+
+      primary_key if flag
     end
 
     def convert_to_native_row(row)

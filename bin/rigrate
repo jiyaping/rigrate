@@ -11,12 +11,60 @@ class RigrateApp < Thor
   method_option :file, :aliases  => '-f',
                        :type     => :string,
                        :desc     => 'script file path.'
+  method_option :mode, :aliases => '-m',
+  					           :type	  => :string,
+                       :default => :echo,
+  					           :desc	  => "migration mode, :echo and :contribute support in current"
+  method_option :loglevel, :aliases => '-l',
+                           :type    => :string,
+                           :default => "999",
+                           :desc 	  => "Do you want to log the actions? using number 1~5 or info/warn/debug... to this option"
+  method_option :stdout, :aliases 	=> '-o',
+                          :type 	  => :boolean,
+                          :default  => false,
+                          :desc 	  => "switch on to using STDOUT in prompt."
+  method_option :strict, :aliases 	=> '-s',
+            						 :type 		=> :boolean,
+                         :default => false,
+            						 :desc 		=> "switch the option on will using db transaction to commit"
+  method_option	:script, :aliases 	=> '-c',
+            						 :type 		=> :string,
+            						 :desc 		=> "eval migration script in command line. using predefined DataSource in default ds file"
+  method_option  :dir, :aliases   => '-d',
+                       :type    => :string,
+                       :desc    => "directory of rigrate script"
   def execute
-    file = options[:file]
-    opts = {}
+    # format all key from symbol to string
+    opts = options.inject({}) do |hash, (k, v)|
+      hash[k.to_sym] = v 
+      hash
+    end
 
-    Rigrate.run(file, opts)
+    opts[:loglevel] = format_loglevel(opts[:loglevel])
+    Rigrate.run(opts)
   end
+
+  no_commands { 
+    def format_loglevel(level)
+      return level.to_i if level =~ /[1-9]+/
+
+      case level.to_s.downcase
+      when 'debug'
+        return 1
+      when 'info'
+        return 2
+      when 'error'
+        return 3
+      when 'fetal'
+        return 4
+      when 'unknown'
+        return 5
+      else
+        return 999
+      end
+    end
+  }
+  
 end
 
 RigrateApp.start
