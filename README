@@ -1,0 +1,70 @@
+eg1.
+---------
+from OA.user  to  HR.user
+
+
+eg2.
+---------
+from
+  OA.user(:job_code, :chinese_name)
+  union
+  HR.account(:jc, :chinese_name)
+to
+  FOC.T8002(:job_code, :chinese)
+
+eg2.
+---------
+from
+  OA.user(:job_code, :chinese_name) do |rows|
+        row.job_code + "test"
+  end
+  union
+  HR.account(:jc, :chinese_name)
+to
+  FOC.T8002(:job_code, :chinese)
+
+
+eg3.
+---------
+from 
+   OA.select("select * from user")
+  join
+  HR.account("select * from account")
+  on :job_code
+to
+  FOC.T8002
+
+eg4.
+---------
+from 
+  OA.sql("select * from user")
+  join
+  HR.sql("select * from account")
+  on :job_code => :jc
+to
+  FOC.T8002
+
+
+Syntax:
+------------------------
+full_exp
+      : rs_or_migrate_exp
+      | full_exp rs_or_migrate_exp
+      ;
+rs_or_migrate_exp
+      : rs_exp
+      | migrate_exp
+      ;      
+migrate_exp
+      : FROM operate_exp TO rs_exp 
+      | FROM operate_exp TO rs_exp ON rs_exp
+      ;
+operate_exp
+      : rs_exp
+      | rs_exp UNION operate_exp
+      | rs_exp JOIN operate_exp
+      | rs_exp JOIN operate_exp ON rs_exp
+      ;
+rs_exp  
+      : RUBY_STR
+      ;
