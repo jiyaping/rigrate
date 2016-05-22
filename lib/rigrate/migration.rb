@@ -3,10 +3,15 @@
 module Rigrate
   module Migration
     def union(rs_first_str, rs_second_str)
-      rs_first = instance_eval rs_first_str
+      if String === rs_first_str
+        rs_first = instance_eval rs_first_str
+      else
+        rs_first = rs_first_str
+      end
       rs_second = instance_eval rs_second_str
 
       if ResultSet === rs_first && ResultSet === rs_second
+        Rigrate.logger.info("start union two ResultSet rs [#{rs_first.size}] <---> rs [#{rs_second.size}]")
         return rs_first.union rs_second
       else
         raise Exception.new('rs_first or rs_second is not a resultset')
@@ -14,10 +19,15 @@ module Rigrate
     end
 
     def minus(rs_first_str, rs_second_str)
-      rs_first = instance_eval rs_first_str
+      if String === rs_first_str
+        rs_first = instance_eval rs_first_str
+      else
+        rs_first = rs_first_str
+      end
       rs_second = instance_eval rs_second_str
 
       if ResultSet === rs_first && ResultSet === rs_second
+        Rigrate.logger.info("start minus two ResultSet rs [#{rs_first.size}] <---> rs [#{rs_second.size}]")
         return rs_first.minus rs_second
       else
         raise Exception.new('rs_first or rs_second is not a resultset')
@@ -25,12 +35,16 @@ module Rigrate
     end
 
     def join(rs_first_str, rs_second_str, condition = nil)
+      if String === rs_first_str
+        rs_first = instance_eval rs_first_str
+      else
+        rs_first = rs_first_str
+      end
       condition = eval("{#{condition}}") unless condition.nil?
-
-      rs_first = instance_eval rs_first_str
       rs_second = instance_eval rs_second_str
 
       if ResultSet === rs_first && ResultSet === rs_second
+        Rigrate.logger.info("start join two ResultSet rs [#{rs_first.size}] <---> rs [#{rs_second.size}]")
         return rs_first.join(rs_second, condition)
       else
         raise Exception.new('rs_first or rs_second is not a resultset')

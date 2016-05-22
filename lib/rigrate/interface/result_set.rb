@@ -1,4 +1,4 @@
-  # encoding : utf-8
+# encoding : utf-8
 
 module Rigrate
   class ResultSet
@@ -14,7 +14,7 @@ module Rigrate
 
       # convert condition key and value to string
       key_fields = key_fields.inject({}) do |h, (k, v)|
-        h[k.to_s] = v.to_s
+        h[k.to_s.upcase] = v.to_s.upcase
         h
       end
 
@@ -24,8 +24,9 @@ module Rigrate
       ResultSet.new.tap do |rs|
         # remove duplicate column header, base on column name
         addtion_column_info = source_rs.column_info.dup.delete_if do |col|
-          key_fields.values.include? col.name
+          key_fields.values.include? col.name.upcase
         end
+
         rs.column_info = @column_info + addtion_column_info
 
         rs.rows = @rows.inject([]) do |new_rows, row|
@@ -217,7 +218,7 @@ module Rigrate
         handle_update!(condition)
         @db.commit if @db.transaction_active?
       rescue Exception => e
-        Rigrate.logger.error("saving resultset [#{rows.inspect}] error: #{e.message} #{e.backtrace}")
+        Rigrate.logger.error("saving resultset [#{rows.size}] error: #{e.message} #{e.backtrace}")
         raise e
         @db.rollback if @db.transaction_active?
       end

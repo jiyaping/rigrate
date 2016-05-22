@@ -115,7 +115,6 @@ module Rigrate
         end
       end
 
-      Rigrate.logger.debug("lex parsing status : #{str} -> #{tokens}")
       self
     end
 

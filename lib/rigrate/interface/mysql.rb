@@ -59,8 +59,8 @@ module Rigrate
           stm.execute(*row)
         end
       rescue Exception => e
-        Rigrate.logger.error "SQL: #{sql} ARGS:#{args}"
-        raise e
+        Rigrate.logger.error("execute SQL [#{sql}] ARGS [#{args.size}] -> #{e.backtrace.join('\n')}")
+        raise DriverError.new("execute error #{e.message}")
       end
     end
     alias :insert :update

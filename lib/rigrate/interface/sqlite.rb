@@ -24,7 +24,7 @@ module Rigrate
         rs.column_info = statement_fields(stm.columns, stm.types)
         rs.rows = []
         stm.execute.each do |row|
-          new_row = Row.new(row.to_a)
+          new_row = Row.new(to_rb_row(row.to_a))
           yield new_row if block_given?
           rs.rows << new_row
         end
@@ -47,8 +47,8 @@ module Rigrate
           stm.execute(*row)
         end
       rescue Exception => e
-        Rigrate.logger.error "SQL: #{sql} ARGS:#{args} -> #{e.backtrace}"
-        raise e
+        Rigrate.logger.error("execute SQL [#{sql}] ARGS [#{args.size}] -> #{e.backtrace.join('\n')}")
+        raise DriverError.new("execute error #{e.message}")
       end
     end
     alias :insert :update
@@ -59,6 +59,16 @@ module Rigrate
         col_hash["pk"] == 1
       end).map do |col_hash|
         col_hash["name"]
+      end
+    end
+
+    def to_rb_row(row)
+      row.map do |field|
+        if field.nil?
+          field.to_s
+        else
+          field
+        end
       end
     end
 

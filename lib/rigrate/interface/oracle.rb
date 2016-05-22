@@ -41,8 +41,8 @@ module Rigrate
           cursor.exec(*row)
         end
       rescue Exception => e
-         Rigrate.logger.error("execute SQL [#{sql}] ARGS #{args.inspect} -> #{e.backtrace}")
-         raise e
+         Rigrate.logger.error("execute SQL [#{sql}] ARGS [#{args.size}] -> #{e.backtrace.join('\n')}")
+         raise DriverError.new("execute error #{e.message}")
       end
     end
     alias :insert :execute
@@ -79,8 +79,11 @@ module Rigrate
           new_val = OCI8::NCLOB.new(@db, row[idx])
         when :date
           if row[idx]
-            #puts "////#{row[idx].inspect}"
-            new_val = Time.parse(row[idx])
+            if Time === row[idx]
+              new_val = row[idx]
+            elsif String === row[idx] && row[idx].size > 0
+              new_val = Time.parse(row[idx])
+            end
           else
             new_val = ''
           end

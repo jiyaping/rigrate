@@ -44,24 +44,23 @@ class RigrateApp < Thor
     Rigrate.run(opts)
   end
 
+  desc "verify", "verify a file is right or not"
+  method_option :file, :aliases => '-f',
+                        :desc => "the file to be verified"
+  def verify
+    
+  end
+
   no_commands { 
     def format_loglevel(level)
-      return level.to_i if level =~ /[1-9]+/
+      level = level.to_s.downcase
+      return level.to_i if level =~ /[0-5]+/
 
-      case level.to_s.downcase
-      when 'debug'
-        return 1
-      when 'info'
-        return 2
-      when 'error'
-        return 3
-      when 'fetal'
-        return 4
-      when 'unknown'
-        return 5
-      else
-        return 999
+      ['debug', 'info', 'warn', 'error', 'fatal', 'unknown'].each_with_index do |ele, idx|
+        return idx if ele == level.to_s.downcase
       end
+
+      999
     end
   }
   
