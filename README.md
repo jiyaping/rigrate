@@ -139,7 +139,7 @@ Rigrate will do not use transaction as default. Switch it on, you can do it thro
     parser.lex(str).parsing
     ```
 4. QuickScript. a fast way to operate data, Rigrate will load a predefined data sources file in {home}/.rigrate/ds. 
-you can define some frequently used data source, and run in migration throught command line. like blow:
+you can define some frequently used data source, and run in migration throught command line. like below:
 
     ```shell
     $ rigrate execute -c "from hr.users to oa.accounts"
