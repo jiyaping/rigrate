@@ -20,8 +20,8 @@ module Rigrate
       opts = {}
       opts['db_type'] = uri.scheme if uri.scheme
       opts['host'] = uri.host if uri.host
-      opts['username'] = uri.user if uri.user
-      opts['password'] = uri.password if uri.password
+      opts['username'] = URI.decode(uri.user) if uri.user
+      opts['password'] = URI.decode(uri.password) if uri.password
       opts['port'] = uri.port if uri.port
       opts['db_name'] = uri.path.tr('/','') if uri.path.tr('/','').size > 0
 

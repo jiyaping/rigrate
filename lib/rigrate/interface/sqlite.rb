@@ -47,7 +47,7 @@ module Rigrate
           stm.execute(*row)
         end
       rescue Exception => e
-        Rigrate.logger.error("execute SQL [#{sql}] ARGS [#{args.size}] -> #{e.backtrace.join('\n')}")
+        Rigrate.logger.error("execute SQL [#{sql}] ARGS [#{args.size}->#{args.first.size} -> exapmle-data #{args.first.inspect}] -> #{e.backtrace.join('\n')}")
         raise DriverError.new("execute error #{e.message}")
       end
     end

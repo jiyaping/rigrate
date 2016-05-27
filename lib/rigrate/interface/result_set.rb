@@ -153,6 +153,8 @@ module Rigrate
           end
         end
         # :echo and :contribute mode
+		
+		puts "/////////#{src_rows_data.inspect}"
         format_rows(src_rows_data, width).map do |row| 
           new_rows_data << Row.new(row.data, RowStatus::NEW)
         end
@@ -315,7 +317,7 @@ module Rigrate
 
       if r_length > tg_width
         src_rows.map! do |row|
-          row.data = row[0..tg_width]
+          row.data = row[0..tg_width - 1]
         end
       elsif r_length < tg_width
         src_rows.map! do |row|

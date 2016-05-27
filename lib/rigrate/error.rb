@@ -7,5 +7,5 @@ module Rigrate
   class ParserError < BasicError; end
   class InterfaceError < BasicError; end
   class ResultSetError < BasicError; end
-  class DirverError < BasicError; end
+  class DriverError < BasicError; end
 end

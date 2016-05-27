@@ -114,8 +114,8 @@ module Rigrate
       uri = URI.parse(uri)
       args = {}
 
-      args[:host] = uri.host if uri.host
-      args[:user] = uri.user if uri.user
+      args[:host] = URI.decode(uri.host) if uri.host
+      args[:user] = URI.decode(uri.user) if uri.user
       args[:passwd] = uri.password if uri.password
       args[:port] = uri.port if uri.port
       args[:scheme] = uri.scheme if uri.scheme

@@ -107,7 +107,9 @@ module Rigrate
         if [OCI8::BLOB, OCI8::CLOB, OCI8::NCLOB].include? type
           field.read
         elsif Time == type
-          field.to_s          
+          field.to_s
+		elsif BigDecimal == type
+		  field.to_f
         else
           field
         end
@@ -119,8 +121,8 @@ module Rigrate
       uri = URI.parse(uri)
       args = {}
 
-      args[:username] = uri.user if uri.user
-      args[:password] = uri.password if uri.password
+      args[:username] = URI.decode(uri.user) if uri.user
+      args[:password] = URI.decode(uri.password) if uri.password
       args[:sid] = uri.host if uri.host
       URI::decode_www_form(uri.query.to_s).to_h.each do |key, val|
         args[key] = val
